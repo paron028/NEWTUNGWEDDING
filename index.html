@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>ค้นหาโต๊ะของคุณ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Chonburi&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#f7f1e8; --bg2:#efe4d4; --card:#fffdf9;
+    --ink:#4a3b32; --muted:#9c8b7d; --gold:#b8895b; --gold-d:#9a6f42;
+    --line:#e7dccb; --ok:#7a9a6d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Sarabun',sans-serif; color:var(--ink);
+    background:linear-gradient(160deg,var(--bg1),var(--bg2));
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:28px 18px 40px;
+  }
+  .wrap{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center}
+  .crest{font-size:34px;line-height:1;margin-bottom:10px;opacity:.85}
+  .sub{font-size:15px;letter-spacing:3px;color:var(--gold-d);text-transform:uppercase;margin-bottom:4px}
+  h1{font-family:'Chonburi',serif;font-weight:400;font-size:27px;color:var(--gold-d);
+     text-align:center;line-height:1.35;margin-bottom:6px}
+  .hint{font-size:15px;color:var(--muted);text-align:center;margin-bottom:22px}
+  .searchbox{position:relative;width:100%;margin-bottom:6px}
+  input{
+    width:100%;font-family:'Sarabun',sans-serif;font-size:20px;color:var(--ink);
+    padding:18px 20px;border:1.5px solid var(--line);border-radius:16px;background:var(--card);
+    outline:none;box-shadow:0 6px 18px rgba(120,90,60,.06);transition:border-color .2s,box-shadow .2s;
+  }
+  input:focus{border-color:var(--gold);box-shadow:0 6px 22px rgba(184,137,91,.18)}
+  input::placeholder{color:#c3b4a4}
+  .count{font-size:13px;color:var(--muted);align-self:flex-end;margin:2px 4px 16px}
+  .results{width:100%;display:flex;flex-direction:column;gap:12px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;
+    box-shadow:0 8px 22px rgba(120,90,60,.07);display:flex;align-items:center;justify-content:space-between;gap:14px;
+    animation:pop .18s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card .name{font-size:19px;font-weight:600;line-height:1.3}
+  .card .name small{display:block;font-weight:400;font-size:13px;color:var(--muted);margin-top:2px}
+  .tablepill{flex:none;text-align:center;min-width:96px;background:linear-gradient(160deg,#c79a6a,#a9713f);
+    color:#fff;border-radius:14px;padding:12px 10px;box-shadow:0 6px 14px rgba(169,113,63,.3)}
+  .tablepill .lbl{font-size:12px;letter-spacing:1px;opacity:.9}
+  .tablepill .num{font-family:'Chonburi',serif;font-size:30px;line-height:1.05;margin-top:2px}
+  .tablepill.none{background:linear-gradient(160deg,#c9bdae,#a99a89)}
+  .tablepill.none .num{font-size:16px;font-family:'Sarabun';font-weight:600;padding:6px 0}
+  .empty{text-align:center;color:var(--muted);font-size:16px;padding:26px 10px;line-height:1.6}
+  .empty .big{font-size:22px;display:block;margin-bottom:6px;opacity:.5}
+  .foot{margin-top:30px;font-size:12px;color:#b7a695;text-align:center;line-height:1.7}
+  .divider{width:46px;height:2px;background:var(--gold);opacity:.5;border-radius:2px;margin:14px 0 20px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="crest">&#128144;</div>
+    <div class="sub">Wedding</div>
+    <h1>ค้นหาโต๊ะของคุณ</h1>
+    <div class="hint">พิมพ์ชื่อของคุณตามการ์ดเชิญ</div>
+    <div class="searchbox">
+      <input id="q" type="text" inputmode="text" autocomplete="off" autocapitalize="off"
+             placeholder="พิมพ์ชื่อ เช่น ประสิทธิ์" aria-label="ค้นหาชื่อ">
+    </div>
+    <div class="count" id="count"></div>
+    <div class="divider"></div>
+    <div class="results" id="results"></div>
+    <div class="foot">
+      ไม่พบชื่อของคุณ? กรุณาสอบถามเจ้าหน้าที่ต้อนรับ<br>
+    </div>
+  </div>
+
+<script>
+const GUESTS = [{"n": "คุณ ประสิทธิ์ สุขสมิทธิ์", "t": "10"}, {"n": "คุณ สุมณฑา สุขสมิทธิ์", "t": "10"}, {"n": "คุณ ปริญญ์ สุขสมิทธิ์", "t": "10"}, {"n": "คุณ พลอยนภัส สุขสมิทธิ์", "t": "10"}, {"n": "ดช. จุน สุขสมิทธิ์", "t": "10"}, {"n": "ดญ. มิน สุขสมิทธิ์", "t": "10"}, {"n": "คุณ พิทักษ์ จตุรพิธพรชัย", "t": "10"}, {"n": "คุณ กีรติ สุขสมิทธิ์", "t": "10"}, {"n": "คุณ Fan Chih Hsuan", "t": "10"}, {"n": "คุณ ประสิทธิ์ ปุษยไพบูลย์", "t": "6"}, {"n": "คุณ สุภาพร ปุษยไพบูลย์", "t": "6"}, {"n": "คุณ ปรีดิ์ ปุษยไพบูลย์", "t": "6"}, {"n": "คุณ ปริย ปุษยไพบูลย์", "t": "6"}, {"n": "คุณ มุกชมพู ปุษยไพบูลย์", "t": "6"}, {"n": "น้อง เปรม", "t": "6"}, {"n": "น้อง เมิฟ", "t": "6"}, {"n": "คุณ ปรณ ปุษยไพบูลย์", "t": "6"}, {"n": "คุณ ณัฐธิดา ไชยวงค์", "t": "6"}, {"n": "น้อง โบกี้", "t": "6"}, {"n": "คุณ ชัยนันท์ สุขสมิทธิ์", "t": "2"}, {"n": "คุณ ชิตสุดา ชินธรรมมิตร", "t": "2"}, {"n": "คุณ ชาลิสา สุขสมิทธิ์", "t": "2"}, {"n": "คุณ ชัยวุฒิ สุขสมิทธิ์", "t": "1"}, {"n": "คุณ ภัทรา สุขสมิทธิ์", "t": "1"}, {"n": "คุณ วุฒิภัทร สุขสมิทธิ์", "t": "1"}, {"n": "คุณ ภคนันท์ สุขสมิทธิ์", "t": "1"}, {"n": "คุณ สุธาสินี คล้ายกรุต", "t": "1"}, {"n": "คุณ ชนาภัทร สุขสมิทธิ์", "t": "1"}, {"n": "คุณ ศุภสิทธิ์ หิรัญศักดิ์", "t": "1"}, {"n": "คุณ กิตติพศ ทองยิ่งสกุล", "t": "1"}, {"n": "คุณ ธันย์ชนก สาครพันธรักษ์", "t": "1"}, {"n": "คุณ ทศภณ ศิริโชคชัยกูล", "t": "1"}, {"n": "คุณ กิตติ สุขสมิทธิ์", "t": "2"}, {"n": "คุณ ศิริกุล สุขสมิทธิ์", "t": "2"}, {"n": "คุณ กิตติกุล สุขสมิทธิ์", "t": "2"}, {"n": "คุณ ปุณณภา สุขสมิทธิ์", "t": "2"}, {"n": "คุณ สมิทธิ์ สุขสมิทธิ์", "t": "2"}, {"n": "คุณ พัชริน สุขสมิทธิ์", "t": "2"}, {"n": "คุณ พส สุขสมิทธิ์", "t": "2"}, {"n": "คุณ พริส สุขสมิทธิ์", "t": "2"}, {"n": "อากง ฮ้อ วิทยาปัญญานนท์", "t": ""}, {"n": "คุณ ภัควัฒน์ วิทยาปัญญานนท์", "t": ""}, {"n": "คุณ ?", "t": ""}, {"n": "Sunyo", "t": ""}, {"n": "Sunyo wife", "t": ""}, {"n": "Sharp", "t": ""}, {"n": "Bell", "t": ""}, {"n": "คุณ วิจักษณ์ พฤฒิพานิช", "t": ""}, {"n": "คุณ สุภาพร พฤฒิพานิช", "t": ""}, {"n": "Junior", "t": ""}, {"n": "Jumbo", "t": ""}, {"n": "คุณ สมเกียรติ วิทยาปัญญานนท์", "t": ""}, {"n": "คุณ วราณี วิทยาปัญญานนท์", "t": ""}, {"n": "น้องหลิน", "t": ""}, {"n": "ไจไจ๋", "t": ""}, {"n": "คุณ บัญชา วิทยาปัญญานนท์", "t": ""}, {"n": "คุณ พูนทรัพย์ วิทยาปัญญานนท์", "t": ""}, {"n": "เมียพี่ X", "t": ""}, {"n": "น้อง วาจา", "t": ""}, {"n": "คุณ สุเจตน์ เขตตโยคิน", "t": ""}, {"n": "คุณ ผิน ตันเตชสาธิต", "t": ""}, {"n": "คุณ ดารา ตันเตชสาธิต", "t": ""}, {"n": "คุณ อรปภา ตันเตชสาธิต", "t": ""}, {"n": "คุณ สุทรรศ ตันเตชสาธิต", "t": ""}, {"n": "คุณ ปณิดา ตันเตชสาธิต", "t": ""}, {"n": "จักจั่น", "t": ""}, {"n": "ลูกชาย คิ้วหมู", "t": ""}, {"n": "คุณ วันทนา ตันเตชสาธิต", "t": ""}, {"n": "คุณ กาญจนา ตันเตชสาธิต", "t": ""}, {"n": "คุณ ธานินทร์ ศรีวรานันท์", "t": ""}, {"n": "คุณ สุพัตรา ศรีวรานันท์", "t": ""}, {"n": "คุณ ธัญชนก ศรีวรานันท์", "t": ""}, {"n": "แฟนน้องธัน", "t": ""}, {"n": "คุณ พิพัฒน์ วิทยาปัญญานนท์", "t": ""}, {"n": "คุณ พัชริทร์ วิทยาปัญญานนท์", "t": ""}, {"n": "น้อง เวลา", "t": ""}];
+
+function norm(s){
+  return (s||'').toString().toLowerCase()
+    .replace(/[\u0020\u00a0]+/g,'')      // remove spaces
+    .replace(/[.,?]/g,'');                  // strip punctuation
+}
+// build normalized search keys once
+GUESTS.forEach(g=>{ g._k = norm(g.n); });
+
+const qEl = document.getElementById('q');
+const resEl = document.getElementById('results');
+const countEl = document.getElementById('count');
+
+function render(){
+  const raw = qEl.value.trim();
+  const q = norm(raw);
+  resEl.innerHTML=''; countEl.textContent='';
+  if(!q){ return; }
+  const matches = GUESTS.filter(g => g._k.includes(q));
+  if(matches.length===0){
+    resEl.innerHTML = '<div class="empty"><span class="big">&#128533;</span>'+
+      'ไม่พบชื่อ &ldquo;'+escapeHtml(raw)+'&rdquo;<br>ลองพิมพ์เฉพาะชื่อจริง หรือสอบถามเจ้าหน้าที่</div>';
+    return;
+  }
+  countEl.textContent = 'พบ '+matches.length+' รายชื่อ';
+  const show = matches.slice(0,25);
+  show.forEach(g=>{
+    const div = document.createElement('div');
+    div.className='card';
+    const hasT = g.t && g.t.length>0;
+    div.innerHTML =
+      '<div class="name">'+escapeHtml(g.n)+'</div>'+
+      (hasT
+        ? '<div class="tablepill"><div class="lbl">โต๊ะ</div><div class="num">'+escapeHtml(g.t)+'</div></div>'
+        : '<div class="tablepill none"><div class="num">สอบถาม<br>เจ้าหน้าที่</div></div>');
+    resEl.appendChild(div);
+  });
+  if(matches.length>show.length){
+    const more=document.createElement('div');
+    more.className='empty';more.style.padding='10px';
+    more.textContent='... และอีก '+(matches.length-show.length)+' รายชื่อ พิมพ์ให้ละเอียดขึ้น';
+    resEl.appendChild(more);
+  }
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+qEl.addEventListener('input', render);
+qEl.focus();
+</script>
+</body>
+</html>
