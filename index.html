@@ -159,6 +159,7 @@ GUESTS.forEach(g=>{
   g._f = norm(toks[i]||'');
 });
 
+let selected = null;
 const qEl = document.getElementById('q');
 const resEl = document.getElementById('results');
 const countEl = document.getElementById('count');
@@ -181,7 +182,7 @@ function makeCard(g, sel){
       ? '<div class="tablepill"><div class="lbl">โต๊ะ</div><div class="num">'+escapeHtml(g.t)+'</div></div>'
       : '<div class="tablepill none"><div class="num">สอบถาม<br>เจ้าหน้าที่</div></div>');
   if(!sel){
-    div.onclick = ()=>{ qEl.value = g.n; render(); };
+    div.onclick = ()=>{ selected = g; render(); };
   }
   return div;
 }
@@ -190,7 +191,17 @@ function render(){
   const raw = qEl.value.trim();
   const q = norm(raw);
   resEl.innerHTML=''; countEl.textContent='';
-  if(!q){ highlight(new Set()); return; }
+  if(!q){ selected=null; highlight(new Set()); return; }
+  if(selected){
+    highlight(new Set(selected.t ? [selected.t] : []));
+    resEl.appendChild(makeCard(selected, true));
+    const back = document.createElement('div');
+    back.className='back';
+    back.textContent='← แสดงรายชื่อทั้งหมด';
+    back.onclick = ()=>{ selected=null; render(); };
+    resEl.appendChild(back);
+    return;
+  }
   let matches = GUESTS.filter(g => g._k.includes(q));
   matches.sort((a,b)=>rank(a,q)-rank(b,q));
   highlight(new Set(matches.filter(g=>g.t).map(g=>g.t)));
@@ -199,9 +210,9 @@ function render(){
       'ไม่พบชื่อ &ldquo;'+escapeHtml(raw)+'&rdquo;<br>ลองพิมพ์เฉพาะชื่อจริง หรือสอบถามเจ้าหน้าที่</div>';
     return;
   }
-  countEl.textContent = matches.length===1 ? 'พบ 1 รายชื่อ' : 'พบ '+matches.length+' รายชื่อ — แตะชื่อเพื่อเลือก';
+  countEl.textContent = 'พบ '+matches.length+' รายชื่อ — แตะชื่อเพื่อดูโต๊ะของคุณ';
   const show = matches.slice(0,25);
-  show.forEach(g=>resEl.appendChild(makeCard(g, matches.length===1)));
+  show.forEach(g=>resEl.appendChild(makeCard(g,false)));
   if(matches.length>show.length){
     const more=document.createElement('div');
     more.className='empty';more.style.padding='10px';
@@ -210,7 +221,7 @@ function render(){
   }
 }
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));}
-qEl.addEventListener('input', render);
+qEl.addEventListener('input', ()=>{ selected=null; render(); });
 qEl.focus();
 </script>
 </body>
