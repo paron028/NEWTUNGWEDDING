@@ -66,6 +66,9 @@
   .tbl.hit text{fill:#fff}
   .tbl.hit{filter:drop-shadow(0 0 7px rgba(169,113,63,.85));animation:blink 1.1s ease infinite alternate}
   @keyframes blink{from{filter:drop-shadow(0 0 3px rgba(169,113,63,.5))}to{filter:drop-shadow(0 0 10px rgba(169,113,63,1))}}
+  .card{cursor:pointer}
+  .card.sel{border:1.5px solid var(--gold);box-shadow:0 10px 26px rgba(184,137,91,.25)}
+  .back{margin-top:2px;text-align:center;font-size:14.5px;color:var(--gold-d);cursor:pointer;text-decoration:underline;padding:10px}
 </style>
 </head>
 <body>
@@ -148,11 +151,20 @@ function norm(s){
     .replace(/[\u0020\u00a0]+/g,'')
     .replace(/[.,?]/g,'');
 }
-GUESTS.forEach(g=>{ g._k = norm(g.n); });
+const TITLES=['คุณ','นาย','นาง','นางสาว','ดช.','ดญ.','ด.ช.','ด.ญ.','น้อง','อากง','อาม่า'];
+GUESTS.forEach(g=>{
+  g._k = norm(g.n);
+  const toks = g.n.trim().split(/\s+/);
+  let i=0; while(i<toks.length-1 && TITLES.includes(toks[i])) i++;
+  g._f = norm(toks[i]||'');
+});
+let selected = null;
 
 const qEl = document.getElementById('q');
 const resEl = document.getElementById('results');
 const countEl = document.getElementById('count');
+
+function rank(g,q){ if(g._f.startsWith(q)) return 0; if(g._f.includes(q)) return 1; return 2; }
 
 function highlight(tset){
   document.querySelectorAll('.tbl').forEach(el=>{
@@ -160,31 +172,47 @@ function highlight(tset){
   });
 }
 
+function makeCard(g, sel){
+  const div = document.createElement('div');
+  div.className = 'card'+(sel?' sel':'');
+  const hasT = g.t && g.t.length>0;
+  div.innerHTML =
+    '<div class="name">'+escapeHtml(g.n)+'</div>'+
+    (hasT
+      ? '<div class="tablepill"><div class="lbl">โต๊ะ</div><div class="num">'+escapeHtml(g.t)+'</div></div>'
+      : '<div class="tablepill none"><div class="num">สอบถาม<br>เจ้าหน้าที่</div></div>');
+  if(!sel){
+    div.onclick = ()=>{ selected = g; render(); };
+  }
+  return div;
+}
+
 function render(){
   const raw = qEl.value.trim();
   const q = norm(raw);
   resEl.innerHTML=''; countEl.textContent='';
-  if(!q){ highlight(new Set()); return; }
-  const matches = GUESTS.filter(g => g._k.includes(q));
+  if(!q){ selected=null; highlight(new Set()); return; }
+  if(selected){
+    highlight(new Set(selected.t ? [selected.t] : []));
+    resEl.appendChild(makeCard(selected, true));
+    const back = document.createElement('div');
+    back.className='back';
+    back.textContent='← แสดงรายชื่อทั้งหมด';
+    back.onclick = ()=>{ selected=null; render(); };
+    resEl.appendChild(back);
+    return;
+  }
+  let matches = GUESTS.filter(g => g._k.includes(q));
+  matches.sort((a,b)=>rank(a,q)-rank(b,q));
   highlight(new Set(matches.filter(g=>g.t).map(g=>g.t)));
   if(matches.length===0){
     resEl.innerHTML = '<div class="empty"><span class="big">&#128533;</span>'+
       'ไม่พบชื่อ &ldquo;'+escapeHtml(raw)+'&rdquo;<br>ลองพิมพ์เฉพาะชื่อจริง หรือสอบถามเจ้าหน้าที่</div>';
     return;
   }
-  countEl.textContent = 'พบ '+matches.length+' รายชื่อ';
+  countEl.textContent = 'พบ '+matches.length+' รายชื่อ — แตะชื่อเพื่อดูโต๊ะของคุณ';
   const show = matches.slice(0,25);
-  show.forEach(g=>{
-    const div = document.createElement('div');
-    div.className='card';
-    const hasT = g.t && g.t.length>0;
-    div.innerHTML =
-      '<div class="name">'+escapeHtml(g.n)+'</div>'+
-      (hasT
-        ? '<div class="tablepill"><div class="lbl">โต๊ะ</div><div class="num">'+escapeHtml(g.t)+'</div></div>'
-        : '<div class="tablepill none"><div class="num">สอบถาม<br>เจ้าหน้าที่</div></div>');
-    resEl.appendChild(div);
-  });
+  show.forEach(g=>resEl.appendChild(makeCard(g,false)));
   if(matches.length>show.length){
     const more=document.createElement('div');
     more.className='empty';more.style.padding='10px';
@@ -192,8 +220,8 @@ function render(){
     resEl.appendChild(more);
   }
 }
-function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-qEl.addEventListener('input', render);
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));}
+qEl.addEventListener('input', ()=>{ selected=null; render(); });
 qEl.focus();
 </script>
 </body>
