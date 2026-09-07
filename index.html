@@ -91,12 +91,24 @@
   .navmenu a svg{width:23px;height:23px;flex:none;stroke:var(--gold);stroke-width:1.7;fill:none;
     stroke-linecap:round;stroke-linejoin:round}
 
-  .invite{display:flex;align-items:center;gap:11px;width:100%;margin:18px 0 0;padding:13px 15px;
-    border:1px dashed var(--line);border-radius:14px;text-decoration:none;background:rgba(255,253,249,.6);
-    color:var(--muted);font-size:13.5px;line-height:1.55}
-  .invite b{color:var(--gold-d);font-weight:600;white-space:nowrap}
-  .invite svg{width:21px;height:21px;flex:none;stroke:var(--gold);stroke-width:1.6;fill:none;
+  .invite{display:block;width:100%;margin:20px 0 0;padding:16px;border:1px solid var(--line);
+    border-radius:18px;text-decoration:none;background:var(--card);box-shadow:0 8px 22px rgba(120,90,60,.10)}
+  .invite .hd{display:flex;align-items:center;gap:13px}
+  .invite .ic{flex:none;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;background:linear-gradient(160deg,#c79a6a,#a9713f);
+    box-shadow:0 3px 11px rgba(154,111,66,.32);animation:invpulse 3.2s ease-in-out infinite}
+  @keyframes invpulse{0%,70%,100%{transform:scale(1)}80%{transform:scale(1.1)}90%{transform:scale(1)}}
+  .invite .ic svg{width:24px;height:24px;stroke:#fff;stroke-width:1.7;fill:none;
     stroke-linecap:round;stroke-linejoin:round}
+  .invite .tx{flex:1;min-width:0}
+  .invite .t1{display:block;font-size:16px;font-weight:700;color:var(--ink);line-height:1.35}
+  .invite .t2{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .invite .go{display:block;margin-top:14px;text-align:center;font-size:15px;font-weight:700;color:#fff;
+    padding:12px;border-radius:13px;background:linear-gradient(160deg,#c79a6a,#a9713f);
+    box-shadow:0 4px 12px rgba(154,111,66,.30)}
+  .invite:active .go{transform:translateY(1px)}
+  .invite.inres{margin:14px 0 0}
+  @media (prefers-reduced-motion:reduce){.invite .ic{animation:none}}
 </style>
 </head>
 <body>
@@ -175,8 +187,14 @@
     </svg>
     </div>
     <a class="invite" href="photos.html">
-      <svg viewBox="0 0 24 24"><path d="M3 8.6A2.6 2.6 0 0 1 5.6 6h1.9l1.3-2h6.4l1.3 2h1.9A2.6 2.6 0 0 1 21 8.6v8.8A2.6 2.6 0 0 1 18.4 20H5.6A2.6 2.6 0 0 1 3 17.4z"/><circle cx="12" cy="12.9" r="3.5"/></svg>
-      <span>ถ่ายรูปสวยๆ ในงานแล้วมาแบ่งกันนะ <b>ส่งรูปเข้าอัลบั้ม →</b></span>
+      <span class="hd">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 8.6A2.6 2.6 0 0 1 5.6 6h1.9l1.3-2h6.4l1.3 2h1.9A2.6 2.6 0 0 1 21 8.6v8.8A2.6 2.6 0 0 1 18.4 20H5.6A2.6 2.6 0 0 1 3 17.4z"/><circle cx="12" cy="12.9" r="3.5"/></svg></span>
+        <span class="tx">
+          <span class="t1">ถ่ายรูปในงานมาแบ่งกันนะ</span>
+          <span class="t2">ส่งรูปเข้าอัลบั้มรวมของงาน · ดูและโหลดรูปที่คนอื่นถ่ายได้ด้วย</span>
+        </span>
+      </span>
+      <span class="go">เปิดอัลบั้มรูป →</span>
     </a>
     <div class="foot">
       ไม่พบชื่อของคุณ? กรุณาสอบถามเจ้าหน้าที่ต้อนรับ<br>
@@ -241,6 +259,8 @@ function render(){
     back.textContent='← แสดงรายชื่อทั้งหมด';
     back.onclick = ()=>{ selected=null; render(); };
     resEl.appendChild(back);
+    const inv = document.querySelector('.invite');
+    if(inv){ const c = inv.cloneNode(true); c.className = 'invite inres'; resEl.appendChild(c); }
     return;
   }
   let matches = GUESTS.filter(g => g._k.includes(q));
