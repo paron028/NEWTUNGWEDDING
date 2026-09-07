@@ -107,7 +107,6 @@
     padding:12px;border-radius:13px;background:linear-gradient(160deg,#c79a6a,#a9713f);
     box-shadow:0 4px 12px rgba(154,111,66,.30)}
   .invite:active .go{transform:translateY(1px)}
-  .invite.inres{margin:14px 0 0}
   @media (prefers-reduced-motion:reduce){.invite .ic{animation:none}}
 </style>
 </head>
@@ -259,8 +258,6 @@ function render(){
     back.textContent='← แสดงรายชื่อทั้งหมด';
     back.onclick = ()=>{ selected=null; render(); };
     resEl.appendChild(back);
-    const inv = document.querySelector('.invite');
-    if(inv){ const c = inv.cloneNode(true); c.className = 'invite inres'; resEl.appendChild(c); }
     return;
   }
   let matches = GUESTS.filter(g => g._k.includes(q));
