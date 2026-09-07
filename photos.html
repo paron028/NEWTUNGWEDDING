@@ -103,6 +103,7 @@
   }
   .empty .big{font-size:34px;display:block;margin-bottom:6px}
   #more:not([hidden]){display:block;margin:18px auto 0}
+  #again:not([hidden]){display:block;margin-top:10px}
   .foot{text-align:center;color:var(--muted);font-size:12px;line-height:1.9;margin:26px 0 0}
 
   /* ---------- lightbox ---------- */
@@ -158,6 +159,7 @@
       <div class="ptext" id="ptext"></div>
     </div>
     <div class="err" id="err" hidden></div>
+    <button class="btn ghost" id="again" hidden></button>
     <div class="done" id="ok" hidden></div>
   </div>
 
@@ -308,21 +310,42 @@ async function post(body){
   return r.json();
 }
 
+/* ส่งซ้ำอัตโนมัติ — กันกรณีคนอัพพร้อมกันเยอะจน Google ปฏิเสธชั่วคราว
+   (Apps Script จำกัด 30 คำขอพร้อมกันต่อบัญชี) */
+const nap = ms => new Promise(r => setTimeout(r, ms));
+async function postRetry(body, tries){
+  tries = tries || 4;
+  let last = null;
+  for(let n = 0; n < tries; n++){
+    if(n) await nap((900 * Math.pow(2, n - 1)) + Math.random() * 900);  // 0.9s, 1.8s, 3.6s + สุ่ม
+    try{
+      const res = await post(body);
+      if(res && res.ok) return res;
+      last = res;
+    }catch(err){ last = null; }
+  }
+  return last || { ok:false };
+}
+
 /* ---------------- อัพโหลด ---------------- */
 $('#pick').onclick = $('#pick2').onclick = () => $('#file').click();
 
-$('#file').onchange = async ev => {
+$('#file').onchange = ev => {
   const files = [...ev.target.files].filter(f => f.type.startsWith('image/'));
   ev.target.value = '';
-  if(!files.length) return;
+  if(files.length) send(files);
+};
 
+let stuck = [];   // รูปที่ส่งไม่สำเร็จ เก็บไว้ให้กดส่งซ้ำ
+
+async function send(files){
   const by = $('#who').value.trim();
-  $('#err').hidden = true; $('#ok').hidden = true;
+  $('#err').hidden = true; $('#ok').hidden = true; $('#again').hidden = true;
   $('#prog').classList.add('on');
   $('#pick').disabled = $('#pick2').disabled = true;
 
   let done = 0, failed = 0, started = 0;
-  const fresh = [];
+  const fresh = [], missed = [];
   const tick = () => {
     const finished = done + failed;
     $('#ptext').textContent = 'กำลังส่งรูป ' + Math.min(finished + 1, files.length) + ' จาก ' + files.length + ' … (อย่าเพิ่งปิดหน้านี้นะ)';
@@ -335,9 +358,9 @@ $('#file').onchange = async ev => {
       const f = files[started++];
       try{
         const data = await shrink(f);
-        const res = await post({ data, by });
-        if(res && res.ok){ done++; fresh.push(res.item); } else { failed++; }
-      }catch(err){ failed++; }
+        const res = await postRetry({ data, by });
+        if(res && res.ok){ done++; fresh.push(res.item); } else { failed++; missed.push(f); }
+      }catch(err){ failed++; missed.push(f); }
       tick();
     }
   }
@@ -346,6 +369,7 @@ $('#file').onchange = async ev => {
   $('#fill').style.width = '100%';
   $('#prog').classList.remove('on');
   $('#pick').disabled = $('#pick2').disabled = false;
+  stuck = missed;
 
   if(done){
     $('#ok').hidden = false;
@@ -358,9 +382,13 @@ $('#file').onchange = async ev => {
   }
   if(failed){
     $('#err').hidden = false;
-    $('#err').textContent = 'มี ' + failed + ' รูปที่ส่งไม่สำเร็จ ลองใหม่อีกครั้ง หรือเช็คสัญญาณเน็ตดูนะ';
+    $('#err').textContent = 'มี ' + failed + ' รูปที่ยังส่งไม่สำเร็จ (ตอนนี้คนอัพพร้อมกันเยอะ) พักแป๊บแล้วกดปุ่มข้างล่างได้เลย';
+    $('#again').hidden = false;
+    $('#again').textContent = 'ส่ง ' + failed + ' รูปที่ค้างอีกครั้ง';
   }
-};
+}
+
+$('#again').onclick = () => { if(stuck.length) send(stuck.slice()); };
 
 /* ---------------- โหมดลบ (เจ้าของงานเท่านั้น) ---------------- */
 $('#adminhint').onclick = async () => {
@@ -385,10 +413,25 @@ async function removePhoto(id, el){
 }
 
 /* ---------------- เริ่มทำงาน ---------------- */
-$('#more').onclick = async () => {
+let paging = false;
+async function nextPage(){
+  if(paging || loaded >= total) return;
+  paging = true;
   $('#more').disabled = true;
-  try{ await loadPage(loaded); } finally { $('#more').disabled = false; }
-};
+  try{ await loadPage(loaded); }
+  catch(err){ /* เดี๋ยวลองใหม่ตอนเลื่อนอีกรอบ */ }
+  finally { paging = false; $('#more').disabled = false; setTimeout(nearEnd, 250); }
+}
+$('#more').onclick = nextPage;
+
+/* เลื่อนถึงท้ายแล้วโหลดต่อเอง — 1000+ รูปก็ไม่ต้องกดปุ่มรัวๆ */
+function nearEnd(){
+  const el = $('#more');
+  if(el.hidden || paging) return;
+  if(el.getBoundingClientRect().top < window.innerHeight + 600) nextPage();
+}
+window.addEventListener('scroll', nearEnd, { passive:true });
+window.addEventListener('resize', nearEnd, { passive:true });
 
 (async function init(){
   try{
