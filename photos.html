@@ -290,7 +290,16 @@ function cell(it){
   img.alt = it.b ? ('รูปจาก ' + it.b) : 'รูปในงาน';
   img.src = thumbURL(it.i);
   img.onload = () => img.classList.add('in');
-  img.onerror = () => { img.onerror = null; setTimeout(()=>{ img.src = thumbURL(it.i) + '&r=' + Date.now(); }, 1200); };
+  let tries = 0;
+  img.onerror = () => {
+    if(++tries < 2){ setTimeout(()=>{ img.src = thumbURL(it.i) + '&r=' + Date.now(); }, 1200); return; }
+    /* รูปนี้ถูกลบใน Google Drive แล้ว — เอาออกจากหน้าเว็บให้เอง */
+    d.remove();
+    items = items.filter(x => x.i !== it.i);
+    total = Math.max(0, total - 1); loaded = items.length;
+    $('#count').textContent = total ? total.toLocaleString('th-TH') + ' รูป' : '';
+    $('#empty').hidden = total > 0;
+  };
   d.appendChild(img);
 
   if(it.b){ const w = document.createElement('span'); w.className='who'; w.textContent = it.b; d.appendChild(w); }
