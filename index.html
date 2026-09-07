@@ -69,9 +69,45 @@
   .card{cursor:pointer}
   .card.sel{border:1.5px solid var(--gold);box-shadow:0 10px 26px rgba(184,137,91,.25)}
   .back{margin-top:2px;text-align:center;font-size:14.5px;color:var(--gold-d);cursor:pointer;text-decoration:underline;padding:10px}
+
+  /* ---------- เมนูมุมขวาบน ---------- */
+  .navbtn{position:fixed;top:12px;right:12px;z-index:60;width:44px;height:44px;border-radius:14px;
+    border:1px solid var(--line);background:var(--card);box-shadow:0 4px 14px rgba(120,90,60,.12);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .navbtn:active{transform:translateY(1px)}
+  .navbtn svg{width:21px;height:21px;stroke:var(--gold-d);stroke-width:2;stroke-linecap:round;fill:none}
+  .navveil{position:fixed;inset:0;z-index:55;display:none}
+  .navveil.on{display:block}
+  .navmenu{position:fixed;top:64px;right:12px;z-index:60;width:218px;background:var(--card);
+    border:1px solid var(--line);border-radius:16px;box-shadow:0 14px 34px rgba(120,90,60,.20);
+    padding:6px;display:none}
+  .navmenu.on{display:block;animation:navpop .16s ease}
+  @keyframes navpop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .navmenu a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;
+    text-decoration:none;color:var(--ink);font-family:'Sarabun',sans-serif;font-size:15.5px;font-weight:600}
+  .navmenu a:hover{background:#f8f2e8}
+  .navmenu a.here{background:#f4ead9;color:var(--gold-d)}
+  .navmenu a small{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:1px}
+  .navmenu a svg{width:23px;height:23px;flex:none;stroke:var(--gold);stroke-width:1.7;fill:none;
+    stroke-linecap:round;stroke-linejoin:round}
+
+  .invite{display:flex;align-items:center;gap:11px;width:100%;margin:18px 0 0;padding:13px 15px;
+    border:1px dashed var(--line);border-radius:14px;text-decoration:none;background:rgba(255,253,249,.6);
+    color:var(--muted);font-size:13.5px;line-height:1.55}
+  .invite b{color:var(--gold-d);font-weight:600;white-space:nowrap}
+  .invite svg{width:21px;height:21px;flex:none;stroke:var(--gold);stroke-width:1.6;fill:none;
+    stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
 <body>
+<button class="navbtn" id="navbtn" aria-label="เมนู" aria-expanded="false">
+  <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+</button>
+<div class="navveil" id="navveil"></div>
+<nav class="navmenu" id="navmenu">
+  <a href="index.html" class="here"><svg viewBox="0 0 24 24"><rect x="3" y="4.2" width="18" height="15.6" rx="3.2"/><circle cx="8.6" cy="9.6" r="2.05"/><circle cx="15.4" cy="9.6" r="2.05"/><circle cx="12" cy="15.4" r="2.05"/></svg><span>ค้นหาโต๊ะ<small>ดูว่าคุณนั่งโต๊ะไหน</small></span></a>
+  <a href="photos.html"><svg viewBox="0 0 24 24"><path d="M3 8.6A2.6 2.6 0 0 1 5.6 6h1.9l1.3-2h6.4l1.3 2h1.9A2.6 2.6 0 0 1 21 8.6v8.8A2.6 2.6 0 0 1 18.4 20H5.6A2.6 2.6 0 0 1 3 17.4z"/><circle cx="12" cy="12.9" r="3.5"/></svg><span>อัลบั้มรูป<small>ส่งรูปที่ถ่ายในงาน</small></span></a>
+</nav>
   <div class="wrap">
     <div class="crest">&#128144;</div>
     <div class="sub">Wedding</div>
@@ -138,6 +174,10 @@
       <g class="tbl" data-t="25"><circle cx="513" cy="511" r="27"/><text x="513" y="518" text-anchor="middle">25</text></g>
     </svg>
     </div>
+    <a class="invite" href="photos.html">
+      <svg viewBox="0 0 24 24"><path d="M3 8.6A2.6 2.6 0 0 1 5.6 6h1.9l1.3-2h6.4l1.3 2h1.9A2.6 2.6 0 0 1 21 8.6v8.8A2.6 2.6 0 0 1 18.4 20H5.6A2.6 2.6 0 0 1 3 17.4z"/><circle cx="12" cy="12.9" r="3.5"/></svg>
+      <span>ถ่ายรูปสวยๆ ในงานแล้วมาแบ่งกันนะ <b>ส่งรูปเข้าอัลบั้ม →</b></span>
+    </a>
     <div class="foot">
       ไม่พบชื่อของคุณ? กรุณาสอบถามเจ้าหน้าที่ต้อนรับ<br>
     </div>
@@ -224,6 +264,16 @@ function render(){
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));}
 qEl.addEventListener('input', ()=>{ selected=null; render(); });
 qEl.focus();
+
+/* ---------- เมนูมุมขวาบน ---------- */
+(function(){
+  var b=document.getElementById('navbtn'), m=document.getElementById('navmenu'), v=document.getElementById('navveil');
+  if(!b) return;
+  function set(on){ m.classList.toggle('on',on); v.classList.toggle('on',on); b.setAttribute('aria-expanded',on); }
+  b.addEventListener('click',function(e){ e.stopPropagation(); set(!m.classList.contains('on')); });
+  v.addEventListener('click',function(){ set(false); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') set(false); });
+})();
 </script>
 </body>
 </html>
