@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>อัลบั้มรูปจากแขก · NEW & TUNG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Sarabun:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#f7f1e8; --bg2:#efe4d4;
+    --card:#fffdf9; --line:#e7dccb;
+    --ink:#4a3b32;  --muted:#9c8b7d;
+    --gold:#b8895b; --gold-d:#9a6f42;
+    --alert:#b03a2e;
+    --radius:18px;
+    --shadow:0 6px 24px rgba(122,94,66,.10);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Sarabun',system-ui,-apple-system,'Segoe UI',sans-serif;
+    color:var(--ink);
+    background:linear-gradient(160deg,var(--bg1),var(--bg2));
+    background-attachment:fixed;
+    min-height:100vh;
+    padding:0 0 108px;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 14px}
+
+  /* ---------- header ---------- */
+  header{text-align:center;padding:26px 14px 14px}
+  .mono{font-size:12px;letter-spacing:.34em;color:var(--gold);font-weight:600}
+  h1{font-family:'Chonburi',serif;font-weight:400;color:var(--gold-d);
+     font-size:clamp(26px,7vw,38px);margin:8px 0 4px;line-height:1.25}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  .rule{width:56px;height:1px;background:var(--line);margin:16px auto}
+
+  /* ---------- upload card ---------- */
+  .panel{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 16px;margin:0 0 20px;
+  }
+  .panel h2{margin:0 0 4px;font-size:16px;font-weight:800}
+  .panel p{margin:0 0 14px;font-size:13px;color:var(--muted);line-height:1.6}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input[type=text]{
+    flex:1 1 180px;min-width:0;font-family:inherit;font-size:15px;color:var(--ink);
+    padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;
+  }
+  input[type=text]:focus{outline:2px solid rgba(184,137,91,.35);outline-offset:1px}
+  .btn{
+    font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
+    border:0;border-radius:12px;padding:13px 22px;color:#fff;
+    background:linear-gradient(160deg,#c79a6a,#a9713f);
+    box-shadow:0 3px 10px rgba(154,111,66,.28);
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn[disabled]{opacity:.55;cursor:default;box-shadow:none}
+  .btn.ghost{background:none;color:var(--gold-d);border:1px solid var(--line);box-shadow:none}
+  #file{display:none}
+
+  /* ---------- progress ---------- */
+  #prog{display:none;margin-top:14px}
+  #prog.on{display:block}
+  .bar{height:7px;border-radius:99px;background:#efe6d8;overflow:hidden}
+  .bar > i{display:block;height:100%;width:0;border-radius:99px;
+           background:linear-gradient(90deg,#c79a6a,#a9713f);transition:width .25s ease}
+  .ptext{font-size:13px;color:var(--muted);margin-top:8px}
+  .err{color:var(--alert);font-size:13px;margin-top:8px;line-height:1.55}
+  .done{color:#6f8f3f;font-size:13px;margin-top:8px;font-weight:600}
+
+  /* ---------- grid ---------- */
+  .bar-head{display:flex;align-items:baseline;justify-content:space-between;margin:0 2px 10px}
+  .bar-head h2{margin:0;font-size:16px;font-weight:800}
+  .count{font-size:13px;color:var(--muted)}
+  #grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  @media(min-width:620px){#grid{grid-template-columns:repeat(4,1fr);gap:8px}}
+  @media(min-width:860px){#grid{grid-template-columns:repeat(5,1fr)}}
+  .cell{
+    position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;
+    background:#eee3d2;border:1px solid var(--line);cursor:pointer;
+  }
+  .cell img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s}
+  .cell img.in{opacity:1}
+  .cell .who{
+    position:absolute;left:0;right:0;bottom:0;padding:14px 7px 5px;
+    font-size:11px;color:#fff;line-height:1.3;
+    background:linear-gradient(to top,rgba(60,44,32,.72),transparent);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .cell .del{
+    position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;
+    border:0;background:rgba(176,58,46,.92);color:#fff;font-size:15px;line-height:1;
+    cursor:pointer;display:none;
+  }
+  body.admin .cell .del{display:block}
+
+  .empty{
+    text-align:center;color:var(--muted);font-size:14px;line-height:1.9;
+    padding:40px 16px;background:var(--card);border:1px dashed var(--line);border-radius:var(--radius);
+  }
+  .empty .big{font-size:34px;display:block;margin-bottom:6px}
+  #more:not([hidden]){display:block;margin:18px auto 0}
+  .foot{text-align:center;color:var(--muted);font-size:12px;line-height:1.9;margin:26px 0 0}
+
+  /* ---------- lightbox ---------- */
+  #lb{
+    position:fixed;inset:0;z-index:50;display:none;
+    background:rgba(46,35,27,.94);
+    align-items:center;justify-content:center;flex-direction:column;padding:14px;
+  }
+  #lb.on{display:flex}
+  #lb img{max-width:100%;max-height:calc(100vh - 150px);border-radius:10px;object-fit:contain}
+  #lbbar{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center}
+  #lb .btn.ghost{background:rgba(255,255,255,.10);color:#fff;border-color:rgba(255,255,255,.35)}
+  #lbinfo{color:#e8dccb;font-size:12.5px;margin-top:10px;text-align:center}
+  #lbnav{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+  #lbnav button{
+    pointer-events:auto;border:0;background:rgba(255,255,255,.12);color:#fff;
+    width:44px;height:64px;font-size:22px;cursor:pointer;
+  }
+  #lbnav button:first-child{border-radius:0 10px 10px 0}
+  #lbnav button:last-child{border-radius:10px 0 0 10px}
+
+  /* ---------- sticky upload ---------- */
+  .sticky{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;
+    padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top,rgba(247,241,232,.99) 65%,rgba(247,241,232,0));
+    display:flex;justify-content:center;
+  }
+  .sticky .btn{width:100%;max-width:420px;text-align:center;padding:15px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="mono">WEDDING</div>
+  <h1>อัลบั้มรูปจากแขก</h1>
+  <p class="sub">ถ่ายรูปสวยๆ มาแบ่งกันนะ · กดที่รูปเพื่อโหลดเก็บไว้ได้เลย</p>
+  <div class="rule"></div>
+</header>
+
+<div class="wrap">
+
+  <div class="panel">
+    <h2>ส่งรูปเข้าอัลบั้ม</h2>
+    <p>เลือกได้หลายรูปพร้อมกัน · ระบบย่อขนาดให้อัตโนมัติ อัพเร็วไม่กินเน็ต<br>ใส่ชื่อไว้หน่อยก็ดี เพื่อนๆ จะได้รู้ว่าใครถ่าย (ไม่ใส่ก็ได้)</p>
+    <div class="row">
+      <input type="text" id="who" placeholder="ชื่อของคุณ (ไม่บังคับ)" maxlength="40" autocomplete="name">
+      <button class="btn" id="pick">เลือกรูป</button>
+    </div>
+    <input type="file" id="file" accept="image/*" multiple>
+    <div id="prog">
+      <div class="bar"><i id="fill"></i></div>
+      <div class="ptext" id="ptext"></div>
+    </div>
+    <div class="err" id="err" hidden></div>
+    <div class="done" id="ok" hidden></div>
+  </div>
+
+  <div class="bar-head">
+    <h2>รูปทั้งหมด</h2>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div id="grid"></div>
+  <div class="empty" id="empty" hidden>
+    <span class="big">📷</span>
+    ยังไม่มีรูปในอัลบั้ม<br>เป็นคนแรกเลยไหม
+  </div>
+  <button class="btn ghost" id="more" hidden>ดูรูปเก่ากว่านี้</button>
+
+  <p class="foot">
+    รูปทั้งหมดเก็บไว้ให้บ่าวสาว · โหลดได้ไม่จำกัด<br>
+    <span id="adminhint" style="cursor:pointer">·</span>
+  </p>
+</div>
+
+<div class="sticky">
+  <button class="btn" id="pick2">＋ เพิ่มรูปของคุณ</button>
+</div>
+
+<div id="lb" role="dialog" aria-modal="true">
+  <div id="lbnav"><button id="prev" aria-label="ก่อนหน้า">‹</button><button id="next" aria-label="ถัดไป">›</button></div>
+  <img id="lbimg" alt="">
+  <div id="lbbar">
+    <a class="btn" id="dl" download>⤓ บันทึกรูปนี้</a>
+    <button class="btn ghost" id="close">ปิด</button>
+  </div>
+  <div id="lbinfo"></div>
+</div>
+
+<script>
+/* =========================================================
+   ตั้งค่า: วาง URL ของ Apps Script (ลงท้ายด้วย /exec) ตรงนี้
+   ========================================================= */
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwFcDvpkm6k328w-_8nnImyWd2oKOa9_umZXJI7735CWgQ6Ns_23Co2YRLcrFLdx4pV/exec';
+
+/* ---- ค่าปรับแต่งการย่อรูป ---- */
+const MAX_EDGE = 1800;   // ด้านยาวสุดหลังย่อ (px)
+const QUALITY  = 0.82;   // คุณภาพ JPEG
+const PAGE     = 120;    // จำนวนรูปต่อการโหลดหนึ่งครั้ง
+const LANES    = 3;      // ส่งพร้อมกันกี่รูป (เร็วขึ้น ~2.5 เท่า)
+
+const thumbURL = id => 'https://drive.google.com/thumbnail?id=' + id + '&sz=w500';
+const bigURL   = id => 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1800';
+const dlURL    = id => 'https://drive.google.com/uc?export=download&id=' + id;
+
+const $ = s => document.querySelector(s);
+const grid = $('#grid');
+let items = [], loaded = 0, total = 0, adminPass = null;
+
+/* ---------------- โหลดรายการรูป ---------------- */
+async function loadPage(offset){
+  const r = await fetch(ENDPOINT + '?action=list&offset=' + offset + '&limit=' + PAGE, {cache:'no-store'});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error || 'load failed');
+  total = j.total;
+  j.items.forEach(it => { items.push(it); grid.appendChild(cell(it)); });
+  loaded = items.length;
+  $('#count').textContent = total ? total.toLocaleString('th-TH') + ' รูป' : '';
+  $('#empty').hidden = total > 0;
+  $('#more').hidden = loaded >= total;
+}
+
+function cell(it){
+  const d = document.createElement('div');
+  d.className = 'cell';
+  d.dataset.id = it.i;
+
+  const img = new Image();
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.alt = it.b ? ('รูปจาก ' + it.b) : 'รูปในงาน';
+  img.src = thumbURL(it.i);
+  img.onload = () => img.classList.add('in');
+  img.onerror = () => { img.onerror = null; setTimeout(()=>{ img.src = thumbURL(it.i) + '&r=' + Date.now(); }, 1200); };
+  d.appendChild(img);
+
+  if(it.b){ const w = document.createElement('span'); w.className='who'; w.textContent = it.b; d.appendChild(w); }
+
+  const del = document.createElement('button');
+  del.className = 'del'; del.textContent = '×'; del.title = 'ลบรูปนี้';
+  del.onclick = ev => { ev.stopPropagation(); removePhoto(it.i, d); };
+  d.appendChild(del);
+
+  d.onclick = () => openLB(items.findIndex(x => x.i === it.i));
+  return d;
+}
+
+/* ---------------- ดูรูปใหญ่ ---------------- */
+let lbIndex = -1;
+function openLB(i){
+  if(i < 0 || i >= items.length) return;
+  lbIndex = i;
+  const it = items[i];
+  $('#lbimg').src = bigURL(it.i);
+  $('#dl').href = dlURL(it.i);
+  $('#dl').setAttribute('download', 'wedding-' + it.i.slice(0,8) + '.jpg');
+  const when = new Date(it.t).toLocaleString('th-TH', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+  $('#lbinfo').textContent = (it.b ? it.b + ' · ' : '') + when + '  (' + (i+1) + '/' + items.length + ')';
+  $('#lb').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function closeLB(){ $('#lb').classList.remove('on'); document.body.style.overflow=''; $('#lbimg').src=''; }
+$('#close').onclick = closeLB;
+$('#prev').onclick = () => openLB(lbIndex - 1);
+$('#next').onclick = () => openLB(lbIndex + 1);
+$('#lb').onclick = e => { if(e.target.id === 'lb') closeLB(); };
+document.addEventListener('keydown', e => {
+  if(!$('#lb').classList.contains('on')) return;
+  if(e.key === 'Escape') closeLB();
+  if(e.key === 'ArrowLeft') openLB(lbIndex - 1);
+  if(e.key === 'ArrowRight') openLB(lbIndex + 1);
+});
+
+/* ---------------- ย่อรูปในเครื่องก่อนอัพ ---------------- */
+function shrink(file){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let {width:w, height:h} = img;
+      const scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+      w = Math.round(w * scale); h = Math.round(h * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', QUALITY));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('เปิดไฟล์รูปไม่ได้')); };
+    img.src = url;
+  });
+}
+
+async function post(body){
+  const r = await fetch(ENDPOINT, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},   // เลี่ยง CORS preflight
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+/* ---------------- อัพโหลด ---------------- */
+$('#pick').onclick = $('#pick2').onclick = () => $('#file').click();
+
+$('#file').onchange = async ev => {
+  const files = [...ev.target.files].filter(f => f.type.startsWith('image/'));
+  ev.target.value = '';
+  if(!files.length) return;
+
+  const by = $('#who').value.trim();
+  $('#err').hidden = true; $('#ok').hidden = true;
+  $('#prog').classList.add('on');
+  $('#pick').disabled = $('#pick2').disabled = true;
+
+  let done = 0, failed = 0, started = 0;
+  const fresh = [];
+  const tick = () => {
+    const finished = done + failed;
+    $('#ptext').textContent = 'กำลังส่งรูป ' + Math.min(finished + 1, files.length) + ' จาก ' + files.length + ' … (อย่าเพิ่งปิดหน้านี้นะ)';
+    $('#fill').style.width = Math.round(finished / files.length * 100) + '%';
+  };
+  tick();
+
+  async function worker(){
+    while(started < files.length){
+      const f = files[started++];
+      try{
+        const data = await shrink(f);
+        const res = await post({ data, by });
+        if(res && res.ok){ done++; fresh.push(res.item); } else { failed++; }
+      }catch(err){ failed++; }
+      tick();
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(LANES, files.length)}, worker));
+
+  $('#fill').style.width = '100%';
+  $('#prog').classList.remove('on');
+  $('#pick').disabled = $('#pick2').disabled = false;
+
+  if(done){
+    $('#ok').hidden = false;
+    $('#ok').textContent = '✓ ส่งรูปเรียบร้อย ' + done + ' รูป ขอบคุณนะ!';
+    fresh.sort((a,b) => a.t - b.t).forEach(it => { items.unshift(it); grid.prepend(cell(it)); });
+    total += done; loaded += done;
+    $('#count').textContent = total.toLocaleString('th-TH') + ' รูป';
+    $('#empty').hidden = true;
+    setTimeout(()=>{ $('#ok').hidden = true; }, 6000);
+  }
+  if(failed){
+    $('#err').hidden = false;
+    $('#err').textContent = 'มี ' + failed + ' รูปที่ส่งไม่สำเร็จ ลองใหม่อีกครั้ง หรือเช็คสัญญาณเน็ตดูนะ';
+  }
+};
+
+/* ---------------- โหมดลบ (เจ้าของงานเท่านั้น) ---------------- */
+$('#adminhint').onclick = async () => {
+  const p = prompt('รหัสสำหรับลบรูป');
+  if(!p) return;
+  const res = await post({action:'auth', pass:p});
+  if(res && res.ok){ adminPass = p; document.body.classList.add('admin'); }
+  else alert('รหัสไม่ถูกต้อง');
+};
+
+async function removePhoto(id, el){
+  if(!adminPass) return;
+  if(!confirm('ลบรูปนี้ออกจากอัลบั้ม?')) return;
+  const res = await post({action:'delete', id, pass:adminPass});
+  if(res && res.ok){
+    el.remove();
+    items = items.filter(x => x.i !== id);
+    total = Math.max(0, total - 1); loaded = items.length;
+    $('#count').textContent = total ? total.toLocaleString('th-TH') + ' รูป' : '';
+    $('#empty').hidden = total > 0;
+  } else alert('ลบไม่สำเร็จ');
+}
+
+/* ---------------- เริ่มทำงาน ---------------- */
+$('#more').onclick = async () => {
+  $('#more').disabled = true;
+  try{ await loadPage(loaded); } finally { $('#more').disabled = false; }
+};
+
+(async function init(){
+  try{
+    await loadPage(0);
+  }catch(err){
+    $('#empty').hidden = false;
+    $('#empty').innerHTML = '<span class="big">⚠️</span>ยังเชื่อมต่ออัลบั้มไม่ได้<br>ลองรีเฟรชอีกครั้งนะ';
+  }
+})();
+</script>
+</body>
+</html>
