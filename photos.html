@@ -277,7 +277,7 @@ const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwFcDvpkm6k328w-_8nnIm
 const MAX_EDGE = 1800;   // ด้านยาวสุดหลังย่อ (px)
 const QUALITY  = 0.82;   // คุณภาพ JPEG
 const PAGE     = 120;    // จำนวนรูปต่อการโหลดหนึ่งครั้ง
-const LANES    = 3;      // ส่งพร้อมกันกี่รูป (เร็วขึ้น ~2.5 เท่า)
+const LANES    = 2;   // ส่งพร้อมกันกี่รูปต่อคน (2 = รองรับคนอัพพร้อมกันได้ ~15 คน)
 
 const thumbURL = id => 'https://drive.google.com/thumbnail?id=' + id + '&sz=w500';
 const bigURL   = id => 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1800';
