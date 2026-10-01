@@ -167,6 +167,20 @@
   .bulk .b1{display:block;font-size:14.5px;font-weight:700;color:var(--ink);line-height:1.35}
   .bulk .b2{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5}
   .bulk .bar{flex:none;font-size:20px;color:var(--gold)}
+
+  /* ---------- ช่องว่างระหว่างรอโหลด (skeleton) ---------- */
+  .skel{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;
+    background:#efe5d6;border:1px solid var(--line)}
+  .skel::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(100deg,transparent 18%,rgba(255,253,249,.72) 50%,transparent 82%);
+    transform:translateX(-100%);animation:shim 1.25s ease-in-out infinite}
+  @keyframes shim{to{transform:translateX(100%)}}
+  @media (prefers-reduced-motion:reduce){.skel::after{animation:none;opacity:.35;transform:none}}
+  /* รูปที่โหลดไม่ขึ้นชั่วคราว — ค้างช่องไว้ ไม่ลบทิ้ง */
+  .cell.sleep{background:#efe5d6}
+  .cell.sleep::after{content:"แตะเพื่อลองใหม่";position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10.5px;color:#a2917f;text-align:center;padding:6px}
 </style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y2MHSB7X45"></script>
 <script>
@@ -297,16 +311,25 @@ function cell(it){
   img.alt = it.b ? ('รูปจาก ' + it.b) : 'รูปในงาน';
   img.src = thumbURL(it.i);
   img.onload = () => img.classList.add('in');
+  /* Google อาจปฏิเสธชั่วคราวตอนคนดูพร้อมกันเยอะ — ใจเย็น ลองใหม่หลายรอบก่อน
+     ถ้ายังไม่ได้ก็ค้างช่องไว้เฉยๆ ไม่ลบรูปที่ยังอยู่จริงทิ้ง */
   let tries = 0;
+  const RETRY = [1000, 2000, 4000, 8000];
   img.onerror = () => {
-    if(++tries < 2){ setTimeout(()=>{ img.src = thumbURL(it.i) + '&r=' + Date.now(); }, 1200); return; }
-    /* รูปนี้ถูกลบใน Google Drive แล้ว — เอาออกจากหน้าเว็บให้เอง */
-    d.remove();
-    items = items.filter(x => x.i !== it.i);
-    total = Math.max(0, total - 1); loaded = items.length;
-    $('#count').textContent = total ? total.toLocaleString('th-TH') + ' รูป' : '';
-    $('#empty').hidden = total > 0;
+    if(tries < RETRY.length){
+      const wait = RETRY[tries++];
+      setTimeout(()=>{ img.src = thumbURL(it.i) + '&r=' + Date.now(); }, wait);
+      return;
+    }
+    d.classList.add('sleep');
   };
+  /* แตะช่องที่หลับอยู่ = ลองโหลดใหม่ทันที */
+  d.addEventListener('click', ev => {
+    if(!d.classList.contains('sleep')) return;
+    ev.stopPropagation();
+    tries = 0; d.classList.remove('sleep');
+    img.src = thumbURL(it.i) + '&r=' + Date.now();
+  }, true);
   d.appendChild(img);
 
   if(it.b){ const w = document.createElement('span'); w.className='who'; w.textContent = it.b; d.appendChild(w); }
@@ -333,6 +356,19 @@ function openLB(i){
   $('#lbinfo').textContent = (it.b ? it.b + ' · ' : '') + when + '  (' + (i+1) + '/' + items.length + ')';
   $('#lb').classList.add('on');
   document.body.style.overflow = 'hidden';
+  preload(i - 1); preload(i + 1);
+}
+
+/* โหลดรูปก่อนหน้า-ถัดไปดักไว้ ปัดแล้วขึ้นทันที ไม่ต้องรอ */
+const warmed = new Set();
+function preload(i){
+  if(i < 0 || i >= items.length) return;
+  const id = items[i].i;
+  if(warmed.has(id)) return;
+  warmed.add(id);
+  const im = new Image();
+  im.decoding = 'async';
+  im.src = bigURL(id);
 }
 function closeLB(){ $('#lb').classList.remove('on'); document.body.style.overflow=''; $('#lbimg').src=''; }
 $('#close').onclick = closeLB;
@@ -485,9 +521,10 @@ async function nextPage(){
   if(paging || loaded >= total) return;
   paging = true;
   $('#more').disabled = true;
+  showSkeleton(6);
   try{ await loadPage(loaded); }
   catch(err){ /* เดี๋ยวลองใหม่ตอนเลื่อนอีกรอบ */ }
-  finally { paging = false; $('#more').disabled = false; setTimeout(nearEnd, 250); }
+  finally { clearSkeleton(); paging = false; $('#more').disabled = false; setTimeout(nearEnd, 250); }
 }
 $('#more').onclick = nextPage;
 
@@ -500,10 +537,27 @@ function nearEnd(){
 window.addEventListener('scroll', nearEnd, { passive:true });
 window.addEventListener('resize', nearEnd, { passive:true });
 
+/* ---------- ช่องว่างระหว่างรอ Apps Script ตอบ (ปกติ 1.5-3 วิ) ---------- */
+function showSkeleton(n){
+  const f = document.createDocumentFragment();
+  for(let i = 0; i < n; i++){
+    const d = document.createElement('div');
+    d.className = 'skel'; d.dataset.skel = '1';
+    f.appendChild(d);
+  }
+  grid.appendChild(f);
+}
+function clearSkeleton(){
+  grid.querySelectorAll('[data-skel]').forEach(el => el.remove());
+}
+
 (async function init(){
+  showSkeleton(12);
   try{
     await loadPage(0);
+    clearSkeleton();
   }catch(err){
+    clearSkeleton();
     $('#empty').hidden = false;
     $('#empty').innerHTML = '<span class="big">⚠️</span>ยังเชื่อมต่ออัลบั้มไม่ได้<br>ลองรีเฟรชอีกครั้งนะ';
   }
